@@ -1,29 +1,47 @@
+import easyocr as ocr  #OCR
+import streamlit as st  #Web App
+from PIL import Image #Image Processing
+import numpy as np #Image Processing 
 
-import os
-import cv2
-import pytesseract
+#title
+st.title("Easy OCR - Extract Text from Images")
 
-from PIL import Image
+#subtitle
+st.markdown("## Optical Character Recognition - Using `easyocr`, `streamlit`")
 
-img = cv2.imread("Toyota_Yaris Cross_Tires_References.jpg")
-gry = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+st.markdown("")
 
-# threshold
-gry = cv2.threshold(gry, 0, 255,
-                    cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+#image uploader
+image = st.file_uploader(label = "Upload your image here",type=['png','jpg','jpeg'])
 
-f_name = "{}.png".format(os.getpid())
-cv2.imwrite(f_name, gry)
 
-text = pytesseract.image_to_string(Image.open(f_name), lang='eng')
+@st.cache
+def load_model(): 
+    reader = ocr.Reader(['en'],model_storage_directory='.')
+    return reader 
 
-for line in text.split('\n'):
-    if "215" in line:
-        name = line.split('.')[1].split(',')[0]
-        print(name)
+reader = load_model() #load model
 
-os.remove(f_name)
+if image is not None:
 
-cv2.imshow("Image", img)
-cv2.imshow("Output", gry)
-cv2.waitKey(0)
+    input_image = Image.open(image) #read image
+    st.image(input_image) #display image
+
+    with st.spinner("🤖 AI is at Work! "):
+        
+
+        result = reader.readtext(np.array(input_image))
+
+        result_text = [] #empty list for results
+
+
+        for text in result:
+            result_text.append(text[1])
+
+        st.write(result_text)
+    #st.success("Here you go!")
+    st.balloons()
+else:
+    st.write("Upload an Image")
+
+st.caption("Made with ❤️ by @1littlecoder")
