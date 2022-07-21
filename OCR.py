@@ -1,21 +1,29 @@
+
+import os
 import cv2
 import pytesseract
-import matplotlib.pyplot as plt
-import streamlit as st
-import numpy as np
 
+from PIL import Image
 
-filename = 'Toyota_Yaris Cross_Tires_References.jpg'
+img = cv2.imread("Toyota_Yaris Cross_Tires_References.jpg")
+gry = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-img = cv2.imread(filename)
-h, w, _ = img.shape
+# threshold
+gry = cv2.threshold(gry, 0, 255,
+                    cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
 
+f_name = "{}.png".format(os.getpid())
+cv2.imwrite(f_name, gry)
 
-boxes = pytesseract.image_to_boxes(img)use
-print(pytesseract.image_to_string(img))
+text = pytesseract.image_to_string(Image.open(f_name), lang='eng')
 
-for b in boxes.splitlines():
-	b = b.split()
-	cv2.rectangle(img, ((int(b[1]), h - int(b[2]))), ((int(b[3]), h - int(b[4]))), (0, 255, 0), 2)
+for line in text.split('\n'):
+    if "215" in line:
+        name = line.split('.')[1].split(',')[0]
+        print(name)
 
-st.pyplot(img)
+os.remove(f_name)
+
+cv2.imshow("Image", img)
+cv2.imshow("Output", gry)
+cv2.waitKey(0)
