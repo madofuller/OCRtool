@@ -1,37 +1,29 @@
-import streamlit as st
-import os
-import pdf2image
-from pdf2image import convert_from_path
-from PIL import Image
-import pytesseract
+import cv2
+import easyocr
+import matplotlib.pyplot as plt
+import numpy as np
 
 
+reader = easyocr.Reader(['en'], gpu=False)
 
-#title widget
-title = st.title("Select scanned PDF to convert to raw text")
+img = cv2.imread('Toyota_Yaris Cross_Tires_References.jpg')
 
 
-jpg_file = st.file_uploader("Choose PDF file", type=["jpg"])
-text_file_name = 'unnamed_file'
-button = st.button("Convert")
-flag_file_processed = False
+results = reader.readtext(img, detail=1, paragraph=False) 
+for (bbox, text, prob) in results:
+    
+    (tl, tr, br, bl) = bbox
+    tl = (int(tl[0]), int(tl[1]))
+    tr = (int(tr[0]), int(tr[1]))
+    br = (int(br[0]), int(br[1]))
+    bl = (int(bl[0]), int(bl[1]))
+    
+    text = "".join([c if ord(c) < 128 else "" for c in text]).strip()
+   
 
-if button and PDF_File is not None:
+    cv2.rectangle(img, tl, br, (0, 255, 0), 2)
+    cv2.putText(img, text, (tl[0], tl[1] - 10), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
-	if PDF_File.type == "application/pdf":
-		images = pdf2image.convert_from_bytes(PDF_File.read())
-		output_text = ''
-		for page_enumeration, page in enumerate(images, start=1):
-			filename = f"page_{page_enumeration:03}.jpg"
-			page.save(filename, "JPEG")
-			with st.spinner(f'Extracting text from given PDF: Page {page_enumeration} of {len(images)}'):
-				image_file = (filename)
-				im = Image.open(image_file)
-				text = pytesseract.image_to_string(im)
-			output_text = output_text + text + '\n'
-
-		flag_file_processed = True
-		text_file_name = PDF_File.name[:-4] + '.txt'
-
-	if flag_file_processed:
-		st.download_button("Download transcibed", output_text, file_name=text_file_name)
+cv2.imshow("Image", img)
+cv2.waitKey(0)
